@@ -1,0 +1,253 @@
+// To run this code you need to install R studio
+// use this link to install R Studio "https://posit.co/downloads/"
+//you need to install readr library to install use this command "install.packages("readr")"
+// file path should be like this "A:/SOFT FILES/R_Langauge/ASS_1/students.csv"
+
+library(readr) # Load the 'readr' library to read and write CSV files
+
+# Function to define fixed file paths for different CSV files
+get_file_paths <- function() {
+  students_file <- "Paste Students csv File Path"
+  books_file <- "Paste Books csv File Path"
+  cart_file <- "Paste Cart csv File Path"
+  checkout_file <- "Paste checkout csv File Path"
+  
+  # Return a list containing the file paths
+  return(list(students_file=students_file, books_file=books_file, cart_file=cart_file, checkout_file=checkout_file))
+}
+
+# Initialize CSV files if they don't already exist
+initialize_files <- function(file_paths) {
+  # Create 'students.csv' if it doesn't exist, with columns: StudentID, Name, Email
+  if (!file.exists(file_paths$students_file)) {
+    write_csv(data.frame(StudentID=integer(), Name=character(), Email=character(), stringsAsFactors=FALSE), file_paths$students_file)
+  }
+  # Create 'engineering_books.csv' if it doesn't exist, with columns: BookID, Title, Author, Quantity
+  if (!file.exists(file_paths$books_file)) {
+    write_csv(data.frame(BookID=integer(), Title=character(), Author=character(), Quantity=integer(), stringsAsFactors=FALSE), file_paths$books_file)
+  }
+  # Create 'CART.csv' if it doesn't exist, with columns: StudentID, BookID, Quantity
+  if (!file.exists(file_paths$cart_file)) {
+    write_csv(data.frame(StudentID=integer(), BookID=integer(), Quantity=integer(), stringsAsFactors=FALSE), file_paths$cart_file)
+  }
+  # Create 'checkout.csv' if it doesn't exist, with columns: StudentID, BookID, Title, Quantity
+  if (!file.exists(file_paths$checkout_file)) {
+    write_csv(data.frame(StudentID=integer(), BookID=integer(), Title=character(), Quantity=integer(), stringsAsFactors=FALSE), file_paths$checkout_file)
+  }
+}
+
+# Read the books CSV file with specified column types
+read_books <- function(file_paths) {
+  read_csv(file_paths$books_file, col_types = cols(
+    BookID = col_integer(),
+    Title = col_character(),
+    Author = col_character(),
+    Quantity = col_integer()
+  ))
+}
+
+# Read the students CSV file with specified column types
+read_students <- function(file_paths) {
+  read_csv(file_paths$students_file, col_types = cols(
+    StudentID = col_integer(),
+    Name = col_character(),
+    Email = col_character()
+  ))
+}
+
+# Read the cart CSV file with specified column types
+read_cart <- function(file_paths) {
+  read_csv(file_paths$cart_file, col_types = cols(
+    StudentID = col_integer(),
+    BookID = col_integer(),
+    Quantity = col_integer()
+  ))
+}
+
+# Read the checkout CSV file with specified column types
+read_checkout <- function(file_paths) {
+  read_csv(file_paths$checkout_file, col_types = cols(
+    StudentID = col_integer(),
+    BookID = col_integer(),
+    Title = col_character(),
+    Quantity = col_integer()
+  ))
+}
+
+# Check if a student with the given ID exists in the students CSV file
+student_exists <- function(file_paths, student_id) {
+  students <- read_students(file_paths)
+  return(any(students$StudentID == student_id))
+}
+
+# Add a new student profile to the students CSV file
+add_student <- function(file_paths, student_id, name, email) {
+  # Check if the student already exists
+  if (student_exists(file_paths, student_id)) {
+    cat("Student ID already exists. Please enter a unique ID.\n")
+  } else {
+    # Append the new student to the students data and write back to CSV
+    students <- read_students(file_paths)
+    new_student <- data.frame(StudentID=student_id, Name=name, Email=email, stringsAsFactors=FALSE)
+    students <- rbind(students, new_student)
+    write_csv(students, file_paths$students_file)
+    cat("Student added successfully.\n")
+  }
+}
+
+# Display the list of available books and their quantities
+show_books <- function(file_paths) {
+  books <- read_books(file_paths)
+  print(books)
+}
+
+# Add a new book to the inventory
+add_book <- function(file_paths, book_id, title, author, quantity) {
+  # Append the new book to the books data and write back to CSV
+  books <- read_books(file_paths)
+  new_book <- data.frame(BookID=book_id, Title=title, Author=author, Quantity=quantity, stringsAsFactors=FALSE)
+  books <- rbind(books, new_book)
+  write_csv(books, file_paths$books_file)
+  cat("Book added successfully.\n")
+}
+
+# Add a book to the student's cart
+add_to_cart <- function(file_paths, student_id, book_id, quantity) {
+  # Check if the student exists before adding to the cart
+  if (!student_exists(file_paths, student_id)) {
+    cat("Student ID does not exist. Please add the student first.\n")
+    return()
+  }
+  
+  # Append the book to the student's cart and write back to CSV
+  cart <- read_cart(file_paths)
+  new_cart_item <- data.frame(StudentID=student_id, BookID=book_id, Quantity=quantity, stringsAsFactors=FALSE)
+  cart <- rbind(cart, new_cart_item)
+  write_csv(cart, file_paths$cart_file)
+  cat("Book added to cart.\n")
+}
+
+# Checkout process: update book quantities and log the checkout
+checkout <- function(file_paths, student_id) {
+  # Check if the student exists before proceeding with checkout
+  if (!student_exists(file_paths, student_id)) {
+    cat("Student ID does not exist. Please add the student first.\n")
+    return()
+  }
+  
+  cart <- read_cart(file_paths)
+  books <- read_books(file_paths)
+  checkout_log <- read_checkout(file_paths)
+  
+  # Get the student's cart items
+  student_cart <- subset(cart, StudentID == student_id)
+  
+  # Check if the cart is empty
+  if (nrow(student_cart) == 0) {
+    cat("No items in cart.\n")
+    return()
+  }
+  
+  # Process each item in the cart
+  for (i in 1:nrow(student_cart)) {
+    book_id <- student_cart$BookID[i]
+    quantity <- student_cart$Quantity[i]
+    
+    # Update book quantities in the inventory
+    books$Quantity[books$BookID == book_id] <- books$Quantity[books$BookID == book_id] - quantity
+    
+    # Log the checkout details
+    book_title <- books$Title[books$BookID == book_id]
+    checkout_entry <- data.frame(StudentID=student_id, BookID=book_id, Title=book_title, Quantity=quantity, stringsAsFactors=FALSE)
+    checkout_log <- rbind(checkout_log, checkout_entry)
+  }
+  
+  # Write the updated books, cart, and checkout log back to CSV
+  write_csv(books, file_paths$books_file)
+  write_csv(subset(cart, StudentID != student_id), file_paths$cart_file)
+  write_csv(checkout_log, file_paths$checkout_file)
+  
+  cat("Checkout completed.\n")
+}
+
+# Show the books checked out by a particular student
+show_checked_out_books <- function(file_paths, student_id) {
+  # Check if the student exists before displaying their checked-out books
+  if (!student_exists(file_paths, student_id)) {
+    cat("Student ID does not exist.\n")
+    return()
+  }
+  
+  checkout_log <- read_checkout(file_paths)
+  
+  # Filter the checkout log for the specified student
+  student_checkouts <- subset(checkout_log, StudentID == student_id)
+  
+  # Check if the student has checked out any books
+  if (nrow(student_checkouts) == 0) {
+    cat("No books checked out by this student.\n")
+  } else {
+    print(student_checkouts)
+  }
+}
+
+# Main Menu to interact with the library system
+main_menu <- function() {
+  file_paths <- get_file_paths()  # Get file paths for CSV files
+  initialize_files(file_paths)    # Initialize files if they don't exist
+  
+  repeat {
+    # Display the menu options
+    cat("\nLibrary Management System\n")
+    cat("1. Add Student\n")
+    cat("2. Show Books\n")
+    cat("3. Add Book\n")
+    cat("4. Add to Cart\n")
+    cat("5. Checkout\n")
+    cat("6. Show Checked Out Books\n")
+    cat("7. Exit\n")
+    
+    # Get the user's menu choice
+    choice <- as.integer(readline(prompt="Enter your choice: "))
+    
+    # Execute the appropriate action based on the user's choice
+    switch(choice,
+           `1` = {
+             student_id <- as.integer(readline(prompt="Enter Student ID: "))
+             name <- readline(prompt="Enter Student Name: ")
+             email <- readline(prompt="Enter Student Email: ")
+             add_student(file_paths, student_id, name, email)
+           },
+           `2` = show_books(file_paths),
+           `3` = {
+             book_id <- as.integer(readline(prompt="Enter Book ID: "))
+             title <- readline(prompt="Enter Book Title: ")
+             author <- readline(prompt="Enter Book Author: ")
+             quantity <- as.integer(readline(prompt="Enter Quantity: "))
+             add_book(file_paths, book_id, title, author, quantity)
+           },
+           `4` = {
+             student_id <- as.integer(readline(prompt="Enter Student ID: "))
+             book_id <- as.integer(readline(prompt="Enter Book ID: "))
+             quantity <- as.integer(readline(prompt="Enter Quantity: "))
+             add_to_cart(file_paths, student_id, book_id, quantity)
+           },
+           `5` = {
+             student_id <- as.integer(readline(prompt="Enter Student ID for Checkout: "))
+             checkout(file_paths, student_id)
+           },
+           `6` = {
+             student_id <- as.integer(readline(prompt="Enter Student ID to view checked-out books: "))
+             show_checked_out_books(file_paths, student_id)
+           },
+           `7` = {
+             cat("Exiting...\n")
+             break
+           },
+           cat("Invalid choice. Try again.\n")
+    )
+  }
+}
+
+# Run the main menu to start the program
+main_menu()
