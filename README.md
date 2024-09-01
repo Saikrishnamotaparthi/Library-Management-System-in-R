@@ -32,3 +32,37 @@ This is a simple Library Management System implemented in R that allows you to m
 
    ```R
    install.packages("readr")
+
+## How to Run the Process
+
+### Step 1: Download the CSV Files
+
+Download the required CSV files as a ZIP archive from this link:
+
+[[Download CSV Files](link-to-zip-file](https://github.com/Saikrishnamotaparthi/Library-Management-System-in-R/blob/6eb879e3548d7d9b41a7b1ef81ab0e94cda2be11/CSV%20FILES.zip))
+
+### Step 2: Extract the CSV Files
+
+Extract the contents of the ZIP archive to a folder on your computer. Ensure that the following files are present:
+
+- `students.csv`
+- `engineering_books.csv`
+- `CART.csv`
+- `checkout.csv`
+
+### Step 3: Update File Paths in the Code
+
+After extracting the files, update the file paths in the `get_file_paths()` function in the R script to reflect the location where you extracted the CSV files. For example:
+
+```r
+get_file_paths <- function() {
+  students_file <- "C:/path/to/your/extracted/files/students.csv"
+  books_file <- "C:/path/to/your/extracted/files/engineering_books.csv"
+  cart_file <- "C:/path/to/your/extracted/files/CART.csv"
+  checkout_file <- "C:/path/to/your/extracted/files/checkout.csv"
+  
+  return(list(students_file=students_file, books_file=books_file, cart_file=cart_file, checkout_file=checkout_file))
+}
+
+
+
